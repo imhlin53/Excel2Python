@@ -1,0 +1,154 @@
+Public b_IsGeneratingPinsSlots As Boolean
+' Generiert die Pin- und Steckplatzzeilen
+Public Sub Generate_PinSlot_Rows()
+    Dim o_RangeTmp1 As Range
+    Dim o_RangeTmp2 As Range
+    Tabelle1.NEWpins = "edit"
+    ' Prüfen der Pin- und Steckplatzanzahlen
+    i_SumPins = Range("SumPins")
+    i_SumSlots = Range("SumSlots")
+    If i_SumPins <= 0 Then
+        MsgBox ("Bitte geben Sie eine Pinanzahl größer 0 ein!")
+        Exit Sub
+    End If
+    If i_SumSlots <= 0 Then
+        MsgBox ("Bitte geben Sie eine Steckplatzanzahl größer 0 ein!")
+        Exit Sub
+    End If
+    
+    ' Globales Flag setzen: Pins werden generiert
+    b_IsGeneratingPinsSlots = True
+    
+    ' Pinzeilen einfügen und füllen
+    i_ExistingPins = Range("PinsLower").Row - Range("PinsUpper").Row - 1
+    
+    If i_SumPins > i_ExistingPins Then
+        ' Pinzeilen einfügen
+        For i = 1 To (i_SumPins - i_ExistingPins)
+            Range("PinsLower").EntireRow.Insert Shift:=xlShiftDown
+        Next i
+
+        Set o_RangeTmp1 = Range("Pins")
+        i_StartRow = o_RangeTmp1.Row
+        i_StartColumn = o_RangeTmp1.Column
+        i_EndRow = o_RangeTmp1.Row + i_SumPins - 1
+        i_EndColumn = i_StartColumn + o_RangeTmp1.Columns.Count - 1
+        Set o_RangeTmp2 = Range(Cells(i_StartRow + i_ExistingPins, i_StartColumn), Cells(i_EndRow, i_EndColumn))
+        ' Eigentlicher Füllvorgang
+        o_RangeTmp1.Copy
+        o_RangeTmp2.PasteSpecial
+        
+        For i_PinIndex = 0 To i_SumPins - 1
+            Cells(i_StartRow + i_PinIndex, 7).Value = i_PinIndex + 1
+        Next i_PinIndex
+
+    ElseIf i_SumPins < i_ExistingPins Then
+        For i = 1 To (i_ExistingPins - i_SumPins)
+            Rows(Range("PinsLower").Row - 1).EntireRow.Delete
+  '          Rows(Range("BGerLower").Row - 1).EntireRow.Delete ' UGU; BGer Behandlung Löschen von BGerPins
+        Next i
+    End If
+    
+    ' Steckplatzzeilen einfügen und füllen
+    i_ExistingSlots = Range("SlotsLower").Row - Range("SlotsUpper").Row - 1
+    If i_SumSlots > i_ExistingSlots Then
+        ' Steckplatzzeilen einfügen
+        For i = 1 To (i_SumSlots - i_ExistingSlots)
+            Range("SlotsLower").EntireRow.Insert Shift:=xlShiftDown
+        Next i
+        
+        ' Steckplatzzeilen füllen (Kopie der ersten Steckplatzzeile)
+        Set o_RangeTmp1 = Range("Slots")
+        ' Zu füllenden Bereich ermitteln
+        i_StartRow = o_RangeTmp1.Row
+        i_StartColumn = o_RangeTmp1.Column
+        i_EndRow = o_RangeTmp1.Row + i_SumSlots - 1
+        i_EndColumn = i_StartColumn + o_RangeTmp1.Columns.Count - 1
+        Set o_RangeTmp2 = Range(Cells(i_StartRow + i_ExistingSlots, i_StartColumn), Cells(i_EndRow, i_EndColumn))
+        ' Eigentlicher Füllvorgang
+        o_RangeTmp1.Copy
+        o_RangeTmp2.PasteSpecial
+        
+        ' Steckplätze durchzählen (65 ist der ASCII-Code für 'A')
+        For i_SlotIndex = 0 To i_SumSlots - 1
+            Cells(i_StartRow + i_SlotIndex, 2).Value = Chr$(65 + i_SlotIndex)
+        Next i_SlotIndex
+    ElseIf i_SumSlots < i_ExistingSlots Then
+        For i = 1 To (i_ExistingSlots - i_SumSlots)
+            Rows(Range("SlotsLower").Row - 1).EntireRow.Delete
+        Next i
+    End If
+    
+    ' Ggf. vorhanden Kopierrahmen entfernen
+    Application.CutCopyMode = False
+ 
+    ' Zelle links/oben in der Pintabelle selektieren
+    Set o_RangeTmp1 = Range("Pins")
+    Cells(o_RangeTmp1.Row, o_RangeTmp1.Column).Select
+ 
+    ' Generiere die Pindaten pro Steckplatz
+    Call Generate_Pin_Data
+ 
+    ' Globales Flag zurücksetzen
+    b_IsGeneratingPinsSlots = False
+End Sub
+' Generiert die Pindaten pro Steckplatz
+Private Sub Generate_Pin_Data()
+    ' Anzahl der Pins und Steckplätze einlesen
+    i_SumPins = Range("SumPins")
+    i_SumSlots = Range("SumSlots")
+    
+    ' Über die Steckplätze iterieren
+    i_DefinedPins = 0
+    For i_SlotIndex = 1 To i_SumSlots
+        ' Name des Steckplatzes (65 ist der ASCII-Code für 'A')
+        s_SlotName = Chr$(64 + i_SlotIndex)
+        
+        ' Verbleibende Pins berechnen
+        i_RemainingPins = i_SumPins - i_DefinedPins
+        
+        ' Meldung zusammenbauen
+        s_Message = "  Steckplatz / Connector = " & s_SlotName
+        s_Message = s_Message & vbCrLf & " ( freie Pins = " & i_RemainingPins
+        s_Message = s_Message & " /" & " freie Steckplätze = " & (i_SumSlots - i_SlotIndex + 1) & " )"
+        Soll_Pins = Gesamt_Pinanzahl - Ist_Pins
+        
+        ' Anzahl der Pins des aktuellen Steckplatzes abfragen
+        b_ValueIo = False
+        i_ActualPins = 0
+        s_DefaultText = ""
+        If i_SlotIndex = i_SumSlots Then
+            i_ActualPins = i_RemainingPins
+        Else
+            Do
+                s_ActualPins = InputBox(s_Message, "Bitte die Pinanzahl des Steckplatzes eingeben", s_DefaultText)
+                ' Prüfung, ob eine Zahl eingegeben wurde
+                If Not IsNumeric(s_ActualPins) Then
+                    MsgBox ("Bitte geben Sie eine Zahl ein!")
+                Else
+                    ' Prüfung, ob die eingegebene Anzahl zu groß ist
+                    i_ActualPins = Val(s_ActualPins)
+                    If (i_ActualPins > i_RemainingPins) Or (i_ActualPins < 0) Then
+                        MsgBox ("Bitte geben Sie eine Zahl größer gleich 0 und kleiner gleich der freien Pinanzahl ein!")
+                    Else
+                        ' Prüfung, ob Pins übrig bleiben
+                        If (i_SlotIndex = i_SumSlots) And (i_ActualPins < i_RemainingPins) Then
+                            MsgBox ("Bitte vergeben Sie beim letzten Steckplatz alle verbleibenden Pins!")
+                        Else
+                            b_ValueIo = True
+                        End If
+                    End If
+                End If
+            Loop Until b_ValueIo
+        End If
+        
+        ' Steckplatz- und Pinnamen setzen
+        i_Row = Range("PinsUpper").Row + i_DefinedPins
+        For i_PinIndex = 1 To i_ActualPins
+            Cells(i_Row + i_PinIndex, 2).Value = s_SlotName
+            Cells(i_Row + i_PinIndex, 7).Value = i_PinIndex
+        Next i_PinIndex
+        i_DefinedPins = i_ActualPins + i_DefinedPins
+      Next i_SlotIndex
+End Sub
+

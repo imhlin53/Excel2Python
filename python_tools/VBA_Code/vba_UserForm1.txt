@@ -1,0 +1,161 @@
+Private Sub AnbingLB_Click()
+
+End Sub
+
+Private Sub ASIL_CB_Change()
+
+End Sub
+
+Private Sub clearCB_Click()
+ASIL_CB.Value = ""
+QminCB.Value = ""
+TerminierungCB.Value = ""
+SchirmungCB.Value = ""
+LayLengthCB.Value = ""
+SaveBT.Enabled = True
+LayLengthCB.ForeColor = RGB(0, 0, 0)
+LayLengthCB.BackColor = RGB(255, 255, 255)
+End Sub
+
+Private Sub ClearCB2_Click()
+LAH_TxB.Text = ""
+End Sub
+
+Private Sub LAH_TxB_Change()
+If BN_LAH_ID <> "" Then BN_LAH_ID = LAH_TxB.Text
+
+End Sub
+
+
+Private Sub LayLengthCB_Change()
+LayLengthCB.ForeColor = RGB(0, 0, 0)
+LayLengthCB.BackColor = RGB(255, 255, 255)
+SaveBT.Enabled = True
+End Sub
+
+Private Sub SaveBT_Click()
+
+If ASIL_CB.Value <> "" Then
+  AbaF1 = ASIL_CB.Value & ";"
+  Else: AbaF1 = ""
+End If
+If TerminierungCB.Value <> "" Then
+  AbaF2 = TerminierungCB.Value & ";"
+  Else: AbaF2 = ""
+End If
+If QminCB.Value <> "" Then
+  AbaF3 = QminCB.Value & ";"
+  Else: AbaF3 = ""
+End If
+If SchirmungCB.Value <> "" Then
+  AbaF4 = SchirmungCB.Value & ";"
+  Else: AbaF4 = ""
+End If
+If LayLengthCB.Value <> "" And SchirmungCB.Value = "UTP" Or SchirmungCB.Value = "STP" Then
+  AbaF5 = LayLengthCB.Value
+End If
+If LayLengthCB.Value <> "" And SchirmungCB.Value <> "UTP" And SchirmungCB.Value <> "STP" Then
+   AbaF5 = ""
+   MsgBox "Cleared by Error: Definition LayLength not possible"
+End If
+
+AnBAnfg = AbaF1 & AbaF2 & AbaF3 & AbaF4 & AbaF5
+LenAnBAnfg = Len(AnBAnfg)
+If Right(AnBAnfg, 1) = ";" Then
+  AnBAnfg = Mid(AnBAnfg, 1, LenAnBAnfg - 1)
+End If
+BN_LAH_ID = LAH_TxB.Text
+Tabelle1.CommandButton2.Caption = "CheckMe"
+Tabelle1.CommandButton2.ForeColor = blue
+Range("DataChecked").Value = "ungeprueft"
+Range("State").Value = ""
+Unload UserForm1
+End Sub
+
+Private Sub SchirmungCB_Change()
+If SchirmungCB.Value = "STP" Or SchirmungCB.Value = "UTP" Then
+LayLengthCB.BackColor = RGB(0, 50, 255)
+LayLengthCB.ForeColor = RGB(250, 255, 255)
+LayLengthCB.SetFocus
+SaveBT.Enabled = False
+End If
+End Sub
+
+
+Private Sub TerminierungCB_Change()
+
+End Sub
+
+Private Sub UserForm_Activate()
+UserForm_Initialize
+End Sub
+
+
+Private Sub UserForm_Initialize()
+
+LAH_TxB.Text = BN_LAH_ID
+'Wortzerlegung
+Len_AnBAnfg = Len(AnBAnfg) 'Länge des Kommentar feststellen
+'Schleife findet Trennzeichen
+AnB_pos = InStr(1, AnBAnfg, ";") 'Suche nach einem Trennzeichen ";" im String der Anbindungsanforderungen
+If AnB_pos = 0 And Len_AnBAnfg >= 1 Then Text_Auswertung (AnBAnfg)
+If AnB_pos = 0 And Len_AnBAnfg = 0 Then
+   clearCB_Click
+   Exit Sub
+End If
+i = 1
+len_AnBtxt = 0
+While AnB_pos > 0
+'Text herausholen
+AnB_pos = InStr(i, AnBAnfg, ";")
+If AnB_pos > 0 Then AnB_pos_pre = AnB_pos
+
+If AnB_pos <> 0 Then
+  len_AnBtxt = AnB_pos - i
+  tmp_Txt = Mid(AnBAnfg, i, len_AnBtxt)
+End If
+
+If AnB_pos = 0 And AnB_pos_pre > 0 Then
+   'Ausnahme bei Länge Null
+   len_AnBtxt = Len_AnBAnfg - AnB_pos_pre
+   tmp_Txt = Mid(AnBAnfg, AnB_pos_pre + 1, len_AnBtxt)
+End If
+ i = AnB_pos + 1
+ 'tmp_Txt auswerten LayL, Qmin LayL40mm Qmin-0.82 ASIL_CB.Value
+ Text_Auswertung (tmp_Txt) ' Sprung zur Funktion Text_Auswertung
+ 
+Wend
+ 
+End Sub
+
+Public Function Text_Auswertung(tmp_Txt)
+
+ TxtCut = Left(tmp_Txt, 4)
+ testAnBind = InStr(1, TxtCut, "(")
+ If testAnBind > 1 Then
+   ASIL_CB.Value = tmp_Txt  'TxtCut = Left(TxtCut, testAnBind - 1) ' Neu urban 23.08.2023
+ End If
+ TxtCut1 = Left(tmp_Txt, 3)
+ TxtCut2 = Right(tmp_Txt, 5)
+ 'MindestLtgQuerschnitt
+ If TxtCut = "Qmin" Then QminCB.Value = tmp_Txt
+ 'Schirmung
+ If TxtCut = "KOAX" Or TxtCut = "RG58" Or TxtCut = "RG17" Or TxtCut = "RTK0" Or TxtCut = "FLHV" Then SchirmungCB.Value = tmp_Txt
+ If TxtCut1 = "UTP" Or TxtCut1 = "STP" Then SchirmungCB.Value = tmp_Txt
+ 'ASIL
+ If TxtCut = "ASIL" Or TxtCut = "ADAP" Or TxtCut1 = "HAF" Or tmp_Txt = "QM" Then ASIL_CB.Value = tmp_Txt
+ 'Schlaglänge
+ If TxtCut = "LayL" Then LayLengthCB.Value = tmp_Txt
+ 'Terminierung
+ If TxtCut2 = "_Term" Then TerminierungCB.Value = tmp_Txt
+ 
+End Function
+
+
+Private Sub UserForm_QueryClose(Cancel As Integer, CloseMode As Integer)
+Unload UserForm1
+End Sub
+
+Private Sub UserForm_Terminate()
+Unload UserForm1
+End Sub

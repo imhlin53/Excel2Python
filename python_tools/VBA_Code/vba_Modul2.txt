@@ -1,0 +1,98 @@
+Public WB_open As Boolean
+' Blendet die Stromspalten aus
+Public Sub StroemeAusblenden()
+    Sheets("Formblatt").Activate
+    Columns("CU:EC").EntireColumn.Hidden = True
+End Sub
+' Blendet die Stromspalten ein
+Public Sub StroemeEinblenden()
+    Sheets("Formblatt").Activate
+    Columns("CU:EC").EntireColumn.Hidden = False
+End Sub
+' Bereinigt das Formblatt nach dem Öffnen des Dokuments
+Public Sub Fix_After_Open()
+    ' Korrektur der Position des Commit-Buttons
+    Call Fix_Commit_Button
+    ' Bereinigt die Pinbeschreibungen
+    Call Fix_Pin_Fields
+    ' Bereinigt die Steckplatzbeschreibungen
+    Call Fix_Slot_Fields
+    ' Zelle links/oben in der Pintabelle selektieren
+    Set o_RangeTmp1 = Range("Pins")
+    Cells(o_RangeTmp1.Row, o_RangeTmp1.Column).Select
+End Sub
+' Korrigiert die Position des Commit-Buttons
+Public Sub Fix_Commit_Button()
+    Call Worksheets("Formblatt").Button1_Standard
+    Call Worksheets("Formblatt").Button2_Standard
+    'Call Worksheets("Formblatt").Button3_Standard
+    Call Worksheets("Formblatt").Button4_Standard
+    Call Worksheets("Formblatt").Button5_Standard
+    Call Worksheets("Formblatt").Button6_Standard
+    
+End Sub
+' Bereinigt die Pinbeschreibungen
+Private Sub Fix_Pin_Fields()
+    Dim l_Row As Long
+    Dim l_RowMin As Long
+    Dim l_RowMax As Long
+    Dim s_PinCharFormula As String
+    On Error GoTo ende
+    l_RowMin = Range("PinsUpper").Row + 1
+    l_RowMax = Range("PinsLower").Row - 1
+    For l_Row = l_RowMin To l_RowMax
+        ' Anbindungsanforderungen
+        'UGU 18.05.2020 Call Set_List_Validation(Sheets("Formblatt").Cells(l_Row, 34), "=Anbindungen")
+        ' Oberlaeche
+        Call Set_List_Validation(Sheets("Formblatt").Cells(l_Row, 10), "=Oberflaechen")
+        ' Strom iO
+        Call Set_List_Validation(Sheets("Formblatt").Cells(l_Row, 48), "=JaNein")
+        ' Pintyp
+        Call Set_List_Validation(Sheets("Formblatt").Cells(l_Row, 52), "=Pintypen")
+        ' Pincharakteristik
+        l_RowTmp = 17 + l_Row - l_RowMin
+        s_PinCharFormula = "=INDIRECT(VLOOKUP(IF(ISBLANK(AZ" & l_RowTmp & "),"""",AZ" & l_RowTmp & "),$IU$1:$IV$32,2,FALSE))"
+        Call Set_List_Validation(Sheets("Formblatt").Cells(l_Row, 65), s_PinCharFormula)
+        ' Zellenformate
+        Call Set_Current_Cells(Sheets("Formblatt").Cells(l_Row, 52), True)
+        ' Pintypen und Pincharakteristik sichern
+        Cells(l_Row, 140).Value = Cells(l_Row, 52)
+        Cells(l_Row, 141).Value = Cells(l_Row, 65)
+ende:
+    Next l_Row
+    
+End Sub
+' Bereinigt die Steckplatzbeschreibungen
+Private Sub Fix_Slot_Fields()
+    Dim l_Row As Long
+    Dim l_RowMin As Long
+    Dim l_RowMax As Long
+    
+    l_RowMin = Range("SlotsUpper").Row + 1
+    l_RowMax = Range("SlotsLower").Row - 1
+    For l_Row = l_RowMin To l_RowMax
+        ' am K-S
+        Call Set_List_Validation(Sheets("Formblatt").Cells(l_Row, 17), "=JaNein")
+        ' Seal
+        Call Set_List_Validation(Sheets("Formblatt").Cells(l_Row, 83), "=JaNein")
+    Next l_Row
+End Sub
+' Setzt für die übergebene Zelle eine Listenvalidierung mit der übergebenen Formel
+' Urban, Weseloh 26.05.2021
+' Operator:=xlBetween entfernt, wird nicht benötigt, Fkt. stuerzt in Enterprise ab
+Private Sub Set_List_Validation(ByVal o_Cell As Range, ByVal s_Formula As String)
+    With o_Cell.Validation
+        .Delete
+        .Add Type:=xlValidateList, _
+             AlertStyle:=xlValidAlertStop, _
+             Formula1:=s_Formula
+        .IgnoreBlank = True
+        .InCellDropdown = True
+        .InputTitle = ""
+        .ErrorTitle = ""
+        .InputMessage = ""
+        .ErrorMessage = ""
+        .ShowInput = True
+        .ShowError = True
+    End With
+End Sub
