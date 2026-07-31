@@ -6,156 +6,15 @@ File:
 Project:
     VOBES Migration Tool
 
-Authors:
-    Lin, Hua
-    M365 Copilot
-
-AI Contributor Information:
-    Product:
-        Microsoft 365 Copilot
-
-    Model Family:
-        GPT-5 Chat
-
-    Contribution Areas:
-        - Validation Architecture
-        - VBA Migration Analysis
-        - Python Development
-        - Software Design
-        - Documentation
-        - Code Review
-
 Purpose:
-    Central validation framework for
-    VOBES workbook data.
+    Validation framework for workbook pin data.
 
 Description:
-    Provides validation services used
-    to verify the completeness and
-    correctness of pin definitions.
-
-    This module is intended to become
-    the primary replacement for the
-    original VBA validation logic.
-
-Primary Class:
-    ValidationEngine
-
-Original VBA Replacements:
-    CheckMe()
-
-Current Responsibilities:
-
-    - Required field checks
-    - Function validation
-    - Direction validation
-    - Voltage validation
-    - Utilization validation
-
-Planned Responsibilities:
-
-    Phase 2
-        - CheckMe() migration
-
-    Phase 3
-        - CurrentChk() integration
-
-    Future
-        - Signal consistency checks
-        - Pin type validation
-        - Current limit validation
-        - Workbook integrity checks
-
-Architecture Role:
-
-        GUI
-          ↓
-    ValidationEngine
-          ↓
-      Error List
-
-Used By:
-    vobes_gui.py
-    vobes_pin_manager.py
-    vobes_service.py
-
-Dependencies:
-    None
-
-Status:
-    Active Development
-
-Creation Date:
-    2026-07-21
+    Provides reusable validation helpers for required fields
+    and business-rule checks used by the migration workflow.
 
 Last Updated:
-    2026-07-21
-
-Maintainers:
-    Lin, Hua
-    M365 Copilot
-
-Validation Philosophy:
-
-    Validation logic should be
-    centralized in this module.
-
-    GUI code should only display
-    validation results.
-
-    Business rules should remain
-    inside ValidationEngine.
-
-Current Rule Set:
-
-    Rule 1
-        Function must exist.
-
-    Rule 2
-        Direction must exist.
-
-    Rule 3
-        Voltage must exist.
-
-    Rule 4
-        Utilization must exist.
-
-Future Rule Set:
-
-    Rule 5
-        Function must exist in
-        CL_InfoDB.
-
-    Rule 6
-        Pin type must be valid.
-
-    Rule 7
-        Direction must be
-        compatible with function.
-
-    Rule 8
-        Voltage type must be
-        compatible with function.
-
-    Rule 9
-        Description must be valid.
-
-Change Log:
-
-2026-07-21
-    Lin, Hua / M365 Copilot
-
-    Initial implementation
-
-        - Created ValidationEngine
-        - Added required field checks
-
-    Future Work
-
-        - Migrate CheckMe()
-        - Add CurrentChk() support
-        - Add CL_InfoDB validation
-        - Add rule-based framework
+    2026-07-31
 
 ============================================================
 """
@@ -233,36 +92,7 @@ class ValidationEngine:
                 f"(Expected={expected}, "
                 f"Actual={actual})"
             )
-        #
-        # Voltage
-        #
-        # expected = str(
-        #     cl_info.get(
-        #         "voltage_type",
-        #         ""
-        #     )
-        # ).strip()
-        # actual = str(
-        #     pin.get(
-        #         "voltage",
-        #         ""
-        #     )
-        # ).strip()
-        # if (
-        #     expected
-        #     and
-        #     actual
-        #     and
-        #     expected != actual
-        # ):
-        #     errors.append(
-        #         f"Voltage mismatch "
-        #         f"(Expected={expected}, "
-        #         f"Actual={actual})"
-        #     )
-        #
-        # Utilization
-        #
+
         expected = str(
             cl_info.get(
                 "utilization",
@@ -346,7 +176,10 @@ class ValidationEngine:
             "i2",
             "i3",
             "i4",
-            "i5"
+            "i5",
+            "i6",
+            "t1",
+            "t2"
         ]:
             value = pin.get(
                 field
@@ -359,6 +192,11 @@ class ValidationEngine:
                 errors.append(
                     f"{field.upper()}: {err}"
                 )
+        errors.extend(
+            CurrentValidator.validate_formula_rules(
+                pin
+            )
+        )
         return errors
     
     

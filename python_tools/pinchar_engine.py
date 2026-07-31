@@ -3,21 +3,23 @@
 File:
     pinchar_engine.py
 
+Project:
+    VOBES Migration Tool
+
 Purpose:
-    Pin Characteristic Engine
+    Pin characteristic logic for the migration workflow.
 
-Replaces VBA:
-    Get_Pin_Sheet()
-    Get_Formula()
-    Set_Current_Cells()
-    CurrentChk()
+Description:
+    Loads pin-characteristic mappings from the workbook and
+    provides helpers for resolving sheet definitions, default
+    values, and formula-based pinchar rules.
 
-Author:
-    Lin, Hua
-    M365 Copilot
+Last Updated:
+    2026-07-31
+
 ============================================================
 """
-
+from pinchar_rules import PINCHAR_RULES
 class PincharEngine:
 
     def __init__(self, workbook):
@@ -168,3 +170,52 @@ class PincharEngine:
                 result["t1"] = 0.3
 
         return result
+    
+    def calculate_defaults(
+            self,
+            characteristic,
+            values):
+
+        result = {}
+
+        rules = PINCHAR_RULES.get(
+            characteristic,
+            {}
+        )
+
+        #
+        # Formula Rules
+        #
+        formulas = rules.get(
+            "formula_rules",
+            {}
+        )
+
+        for target, formula in formulas.items():
+            source = formula["source"]
+            multiplier = formula["multiplier"]
+            source_value = values.get(source)
+
+            if source_value in (None, ""):
+                continue
+
+            result[target] = (
+                float(source_value)
+                *
+                multiplier
+            )
+
+        #
+        # Fixed Defaults
+        #
+        defaults = rules.get(
+            "default_values",
+            {}
+        )
+
+        result.update(defaults)
+
+        return result
+    
+    
+    

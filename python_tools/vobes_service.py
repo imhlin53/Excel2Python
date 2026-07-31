@@ -6,149 +6,24 @@ File:
 Project:
     VOBES Migration Tool
 
-Authors:
-    Lin, Hua
-    M365 Copilot
-
-AI Contributor Information:
-
-    Product:
-
-        Microsoft 365 Copilot
-
-
-    Model Family:
-        GPT-5 Chat
-
-    Contribution Areas:
-        - VBA Migration Analysis
-        - Python Development
-        - Software Architecture
-        - CL_InfoDB Integration
-        - Validation Framework
-        - Documentation
-        - Code Review
-
 Purpose:
-    Service layer between GUI,
-    workbook access, and CL_InfoDB.
+    Business logic layer for the VOBES migration workflow.
 
 Description:
-    Provides the central business logic
-    layer for the VOBES Migration Tool.
+    Coordinates workbook access, CL database lookups, and
+    validation logic for the GUI and migration tools.
 
-    Coordinates:
-        GUI
-        ↓
-    VobesService
-        ↓
-    Workbook
-        ↓
-    CL_InfoDB
-
-Responsibilities:
-
-    Workbook Operations
-        - Read pin data
-        - Read slot data
-        - Update workbook fields
-        - Save workbook changes
-    CL_InfoDB Operations
-        - Function search
-        - Clamp search
-        - Voltage search
-        - Utilization search
-    Lookup Services
-        - find_cl_info()
-        - get_direction()
-        - get_voltage_type()
-    Validation Services
-        - validate_pin()
-        - validate_all_pins()
 Primary Class:
     VobesService
-Original VBA Replacements:
-    Recherche()
-    finde_CL_info()
-    genPinDaten_actCell()
-    Partial CheckMe()
-Current Migration Status:
-    Phase 1-A
-        ✅ find_cl_info()
-    Phase 1-B
-        ✅ Search Integration
-        ✅ Auto Fill
-    Phase 1-C
-        ✅ Description Generation
-    Phase 2-A
-        ✅ Basic CheckMe
-    Phase 2-B
-        ✅ CL_InfoDB Consistency
-    Phase 2-C
-        ✅ Database Validation
-    Phase 2-D
-        ✅ Check All Pins
-
-    Phase 3
-        ⏳ CurrentChk()
 
 Dependencies:
     vobes_workbook.py
     vobes_db.py
     validation_engine.py
 
-Used By:
-    vobes_gui.py
-    vobes_pin_manager.py
-
-Status:
-    Active Development
-
-Creation Date:
-    2026-07-16
-
 Last Updated:
-    2026-07-23
+    2026-07-31
 
-Maintainers:
-    Lin, Hua
-    M365 Copilot
-
-Change Log:
-    2026-07-23
-
-        Lin, Hua / M365 Copilot
-
-        Phase 2-D
-            - Added validate_all_pins()
-            - Added Validation Tab support
-            - Added validation reporting
-
-    2026-07-22
-        Lin, Hua / M365 Copilot
-
-        Phase 2-B
-            - Added CL consistency validation
-            - Added exact-match
-                CL function lookup
-
-    2026-07-21
-        Lin, Hua / M365 Copilot
-
-        Phase 1-A
-            - Added find_cl_info()
-        Phase 1-B
-            - Added auto-fill:
-                Voltage
-                Direction
-                Utilization
-        Phase 1-C
-            - Added description support
-
-    2026-07-16
-        Lin, Hua / M365 Copilot
-
-        Initial implementation
 ============================================================
 """
 from pathlib import Path
@@ -351,6 +226,16 @@ class VobesService:
             pin_type
         )
         
+    def update_pin_characteristic(
+            self,
+            row,
+            value):
+        
+        self.workbook.set_pin_characteristic(
+            row,
+            value
+        )
+        
     def update_pin_clamp(
             self,
             row,
@@ -395,7 +280,79 @@ class VobesService:
             row,
             value
         )
-
+        
+    def update_pin_i1(
+            self,
+            row,
+            value):
+        self.workbook.set_pin_i1(
+            row,
+            value
+        )
+    
+    def update_pin_i2(
+            self,
+            row,
+            value):
+        self.workbook.set_pin_i2(
+            row,
+            value
+        )
+    
+    def update_pin_i3(
+            self,
+            row,
+            value):
+        self.workbook.set_pin_i3(
+            row,
+            value
+        )
+    
+    def update_pin_i4(
+            self,
+            row,
+            value):
+        self.workbook.set_pin_i4(
+            row,
+            value
+        )
+    
+    def update_pin_i5(
+            self,
+            row,
+            value):
+        self.workbook.set_pin_i5(
+            row,
+            value
+        )
+    
+    def update_pin_i6(
+            self,
+            row,
+            value):
+        self.workbook.set_pin_i6(
+            row,
+            value
+        )
+    
+    def update_pin_t1(
+            self,
+            row,
+            value):
+        self.workbook.set_pin_t1(
+            row,
+            value
+        )
+    
+    def update_pin_t2(
+            self,
+            row,
+            value):
+        self.workbook.set_pin_t2(
+            row,
+            value
+        )
+    
     # ==========================================
     # CheckMe Replacement
     # ==========================================

@@ -6,133 +6,27 @@ File:
 Project:
     VOBES Migration Tool
 
-Authors:
-    Lin, Hua
-    M365 Copilot
-
-AI Contributor Information:
-    Product:
-        Microsoft 365 Copilot
-
-    Model Family:
-        GPT-5 Chat
-
-    Contribution Areas:
-        - VBA Migration Analysis
-        - Workbook Architecture
-        - Python Development
-        - Excel Integration
-        - Documentation
-        - Code Review
-
 Purpose:
-    VOBES workbook access layer.
+    Excel workbook access layer for the VOBES migration tools.
 
 Description:
-    Provides a Python abstraction layer
-    for reading and writing VOBES Excel
-    workbooks (.xlsm / .xlsx).
-
-    This module isolates Excel-specific
-    operations from the GUI and business
-    logic layers.
-
-    The workbook layer is responsible for:
-
-        - Workbook loading
-        - Worksheet access
-        - Named range access
-        - Pin area access
-        - Slot area access
-        - Cell updates
-        - Workbook save operations
+    Provides a Python abstraction for loading the VOBES
+    workbook, reading and updating worksheet content, and
+    accessing named ranges used by the migration workflow.
 
 Primary Class:
     VobesWorkbook
 
-Original VBA Replacements:
-    Workbook Object
-    Worksheet Access Logic
-    Named Range Access
-    Cell Read/Write Operations
-
-Supported Workbook Areas:
-
-    Formblatt
-        - Part Number
-        - Description
-        - Status
-        - Pin Information
-
-    Daten
-        - Reference Data
-
-    Pin Rows
-        - Pin Number
-        - Clamp
-        - Function
-        - Voltage
-        - Direction
-        - Utilization
-        - Description
-
-Architecture Role:
-
-        GUI
-          ↓
-      Service Layer
-          ↓
-    VobesWorkbook
-          ↓
-      Excel File
-
 Dependencies:
     openpyxl
-    pathlib
+    pinchar_engine.py
 
-Used By:
-    vobes_service.py
-    vobes_pin_manager.py
-    vobes_gui.py
-
-Status:
-    Active Development
-
-Creation Date:
-    2026-07-15
+Notes:
+    This module isolates Excel-specific operations from the
+    service and GUI layers.
 
 Last Updated:
-    2026-07-21
-
-Maintainers:
-    Lin, Hua
-    M365 Copilot
-
-Change Log:
-
-2026-07-21
-    Lin, Hua / M365 Copilot
-
-    Phase 1 Migration Support
-
-        - Verified workbook access
-        - Verified pin retrieval
-        - Verified save operations
-        - Integrated with
-          VobesService
-
-2026-07-16
-    Lin, Hua / M365 Copilot
-
-        - Added workbook loader
-        - Added worksheet access
-        - Added named range support
-        - Added save functionality
-
-2026-07-15
-    Lin, Hua / M365 Copilot
-
-        Initial workbook migration
+    2026-07-31
 
 ============================================================
 """
@@ -305,8 +199,17 @@ class VobesWorkbook:
                         column=33
                     ).value,
 
-                "pin_type": pin_type,
-                # self.ws.cell(row=row,column=52).value,
+                "pin_type": 
+                    self.ws.cell(
+                        row=row,
+                        column=52
+                    ).value,
+                
+                "characteristic":
+                    self.ws.cell(
+                        row=row,
+                        column=65
+                    ).value,
 
                 #
                 # Current fields
@@ -399,7 +302,7 @@ class VobesWorkbook:
                         row=row,
                         column=176
                     ).value,
-                    
+                                    
                 "pinchar":
                     pinchar_definition,
             })
@@ -534,6 +437,15 @@ class VobesWorkbook:
             row=row,
             column=52
         ).value = text
+        
+    def set_pin_characteristic(
+            self,
+            row,
+            value):
+        self.ws.cell(
+            row=row,
+            column=65
+        ).value = value
 
     def set_pin_clamp(
             self,
@@ -579,6 +491,31 @@ class VobesWorkbook:
             row=row,
             column=171
         ).value = value
+        
+    def set_pin_i1(self, row, val):
+        self.ws.cell(row=row, column=78).value = val
+    
+    def set_pin_i2(self, row, val):
+        self.ws.cell(row=row, column=85).value = val
+        
+    def set_pin_i3(self, row, val):
+        self.ws.cell(row=row, column=92).value = val
+        
+    def set_pin_i4(self, row, val):
+        self.ws.cell(row=row, column=99).value = val
+        
+    def set_pin_i5(self, row, val):
+        self.ws.cell(row=row, column=106).value = val
+        
+    def set_pin_i6(self, row, val):
+        self.ws.cell(row=row, column=113).value = val
+    
+    def set_pin_t1(self, row, val):
+        self.ws.cell(row=row, column=120).value = val
+    
+    def set_pin_t2(self, row, val):
+        self.ws.cell(row=row, column=127).value = val
+        
 
     # ==================================================
     # Utility
