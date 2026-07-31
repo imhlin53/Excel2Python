@@ -116,13 +116,18 @@ Creation Date:
     2026-07-16
 
 Last Updated:
-    2026-07-21
+    2026-07-31
 
 Maintainers:
     Lin, Hua
     M365 Copilot
 
 Change Log:
+
+2026-07-31
+    Lin, Hua / M365 Copilot
+
+    Updated module header documentation
 
 2026-07-21
     Lin, Hua / M365 Copilot
@@ -158,14 +163,15 @@ Change Log:
 
 ============================================================
 """
-
+from tkinter import messagebox
 from statistics import mode
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 from pathlib import Path
 from tkinter import filedialog
-
+import csv
+from tkinter import filedialog
 from vobes_pin_manager import VobesPinManager
 from vobes_service import VobesService
 from pin_description_generator import PinDescriptionGenerator
@@ -310,7 +316,9 @@ class VobesGUI:
             fill="x",
             pady=5
         )
-        self.pinchar_labels = {}
+        
+        self.current_vars = {}
+        self.current_labels = {}
         print("Creating Pinchar Labels")
         
         for field in [
@@ -323,13 +331,32 @@ class VobesGUI:
             "T1",
             "T2"
         ]:
-            print("Adding", field)
+            row_frame = ttk.Frame(
+                self.current_frame
+            )
+            row_frame.pack(
+                fill="x"
+            )
             lbl = ttk.Label(
-                self.current_frame,
+                row_frame,
+                width=35,
                 text=f"{field}:"
             )
-            lbl.pack(anchor="w")
-            self.pinchar_labels[field] = lbl
+            lbl.pack(
+                side="left"
+            )
+            var = tk.StringVar()
+            ent = ttk.Entry(
+                row_frame,
+                textvariable=var,
+                width=15
+            )
+            ent.pack(
+                side="left",
+                padx=5
+            )
+            self.current_labels[field] = lbl
+            self.current_vars[field] = var
 
         self.desc_var = tk.StringVar()
         ttk.Label(right, text='Description').pack(anchor='w')
@@ -374,6 +401,35 @@ class VobesGUI:
         )
 
         self.function_combo.pack(fill="x")
+        
+        # ----------------------------------------
+        # Characteristic
+        # ----------------------------------------
+        ttk.Label(
+            right,
+            text="Characteristic"
+        ).pack(
+            anchor="w"
+        )
+        
+        self.characteristic_var = tk.StringVar()
+        
+        self.characteristic_combo = ttk.Combobox(
+            right,
+            textvariable=self.characteristic_var
+        )
+        
+        self.characteristic_combo["values"] = (
+            "Motor",
+            "Kapazität",
+            "Glühlampe",
+            "Spule",
+            "Ohmsch"
+        )
+        
+        self.characteristic_combo.pack(
+            fill="x"
+        )
 
         # ----------------------------------------
         # Utilization
@@ -432,35 +488,70 @@ class VobesGUI:
         # ----------------------------------------
         # Button
         # ----------------------------------------
-        ttk.Button(
+        actions = ttk.LabelFrame(
             right,
+            text="Actions"
+        )
+        actions.pack(
+            fill="x",
+            pady=5
+        )
+        
+        ttk.Button(
+            actions,
             text="Generate Description",
             command=self.generate_description
-        ).pack(
-            pady=10
-        )
+        ).grid(row=0,column=0,padx=2,pady=2)
         
         #----------------------------------------
         # Save Button
         #----------------------------------------
         ttk.Button(
-            right,
+            actions,
             text="Save Pin",
             command=self.save_pin
-        ).pack(
-            pady=2
-        )
+        ).grid(row=0,column=1,padx=2,pady=2)
         
         ttk.Button(
-            right,
+            actions,
             text="CheckMe",
             command=self.check_pin
-        ).pack(
-            pady=2
-        )
+        ).grid(row=0,column=2,padx=2,pady=2)
+        
+        # print("Creating Apply Pinchar Defaults button")
+        
+        ttk.Button(
+            actions,
+            text="Apply Pinchar Defaults",
+            command=self.apply_pinchar_defaults
+        ).grid(row=0,column=3,padx=2,pady=2)
+        
+        ttk.Button(
+            actions,
+            text="Recalculate All Pins",
+            command=self.recalculate_all_pins
+        ).grid(row=1,column=0,padx=2,pady=2)
+        
+        ttk.Button(
+            actions,
+            text="Validate All Pins",
+            command=self.validate_all_pins
+        ).grid(row=1,column=1,padx=2,pady=2)
+        
+        ttk.Button(
+            actions,
+            text="Export Validation Report",
+            command=self.export_validation_report
+        ).grid(row=1,column=2,padx=2,pady=2)
+        
+        ttk.Button(
+            actions,
+            text="Fill All Pins",
+            command=self.fill_all_pins
+        ).grid(row=1,column=3,padx=2,pady=2)
         
         print(
-            self.pinchar_labels.keys()
+            self.current_labels.keys()
         )
     
     def check_pin(self):
@@ -489,6 +580,8 @@ class VobesGUI:
                 self.util_var.get()
         pin["description"] = \
                 self.desc_var.get()
+        pin["characteristic"] = \
+                self.characteristic_var.get()
 
         errors = self.svc.validate_pin(pin)
 
@@ -899,11 +992,15 @@ class VobesGUI:
         pin = self.pins[selection[0]]
         self.selected_pin = pin
         
-        print()
-        print("=" * 50)
-        print("PINCHAR")
-        print(pin.get("pinchar"))
-        print("=" * 50)
+        self.svc.workbook.debug_pin_row(
+            pin["row"]
+        )
+        
+        # print()
+        # print("=" * 50)
+        # print("PINCHAR")
+        # print(pin.get("pinchar"))
+        # print("=" * 50)
         
         self.desc_var.set(
             pin.get("description", "")
@@ -938,6 +1035,12 @@ class VobesGUI:
         self.dir_var.set(
             pin.get(
                 "direction",
+                ""
+            )
+        )
+        self.characteristic_var.set(
+            pin.get(
+                "characteristic",
                 ""
             )
         )
@@ -978,9 +1081,18 @@ class VobesGUI:
                 ""
             )
             
-            self.pinchar_labels[field].config(
-                text=f"{field}: {value}"
-            )
+            if field in self.current_labels:
+                actual_value = pin.get(field.lower(), "")
+                if actual_value is None:
+                    actual_value = ""
+                
+                self.current_vars[field].set(
+                    str(actual_value)
+                )
+                self.current_labels[field].config(
+                    text=
+                    f"{field}: {value}"
+                )
         
         # desc = pin.get("description", "")
         # if "#" in desc:
@@ -1006,6 +1118,10 @@ class VobesGUI:
             row,
             self.type_var.get()
         )
+        self.svc.update_pin_characteristic(
+            row,
+            self.characteristic_var.get()
+        )
         self.svc.update_pin_clamp(
             row,
             self.clamp_var.get()
@@ -1025,6 +1141,38 @@ class VobesGUI:
         self.svc.update_pin_direction(
             row,
             self.dir_var.get()
+        )
+        self.svc.update_pin_i1(
+            row,
+            self.current_vars["I1"].get()
+        )
+        self.svc.update_pin_i2(
+            row,
+            self.current_vars["I2"].get()
+        )
+        self.svc.update_pin_i3(
+            row,
+            self.current_vars["I3"].get()
+        )
+        self.svc.update_pin_i4(
+            row,
+            self.current_vars["I4"].get()
+        )
+        self.svc.update_pin_i5(
+            row,
+            self.current_vars["I5"].get()
+        )
+        self.svc.update_pin_i6(
+            row,
+            self.current_vars["I6"].get()
+        )
+        self.svc.update_pin_t1(
+            row,
+            self.current_vars["T1"].get()
+        )
+        self.svc.update_pin_t2(
+            row,
+            self.current_vars["T2"].get()
         )
         print("Saving")
         print("Description:", self.desc_var.get())
@@ -1059,10 +1207,256 @@ class VobesGUI:
                 str(ex)
             )
             
-    # def save(self, filename=None):
-    #     self.workbook.save(
-    #         filename
-    #     )
+    def apply_pinchar_defaults(self):
+
+        print()
+        print("=" * 50)
+        print("Apply Pinchar Defaults Clicked")
+        print(
+            "selected Pin =",
+            self.selected_pin
+        )
+        print("=" * 50)
+        if self.selected_pin is None:
+            return
+
+        characteristic = self.characteristic_var.get()
+
+        values = {
+
+            "i1": self.current_vars["I1"].get(),
+            "i2": self.current_vars["I2"].get(),
+            "i3": self.current_vars["I3"].get(),
+            "i4": self.current_vars["I4"].get(),
+            "i5": self.current_vars["I5"].get(),
+            "i6": self.current_vars["I6"].get(),
+            "t1": self.current_vars["T1"].get(),
+            "t2": self.current_vars["T2"].get(),
+        }
+
+        defaults = \
+            self.svc.workbook.pinchar.calculate_defaults(
+                characteristic,
+                values
+            )
+
+        print()
+        print("PINCHAR DEFAULTS")
+        print(defaults)
+
+        for field, value in defaults.items():
+
+            self.current_vars[
+                field.upper()
+            ].set(
+                str(value)
+            )
+    
+    def recalculate_all_pins(self):
+        
+        print()
+        print("=" * 60)
+        print("RECALCULATE ALL PINS")
+        print("=" * 60)
+        
+        pins = self.svc.get_all_pins()
+        
+        count = 0
+        
+        for pin in pins:
+            characteristic = str(
+                pin.get(
+                    "characteristic",
+                    ""
+                )
+            ).strip()
+            
+            if not characteristic:
+                continue
+            
+            values = {
+                "i1": pin.get("i1"),
+                "i2": pin.get("i2"),
+                "i3": pin.get("i3"),
+                "i4": pin.get("i4"),
+                "i5": pin.get("i5"),
+                "i6": pin.get("i6"),
+                "t1": pin.get("t1"),
+                "t2": pin.get("t2")
+            }
+            
+            defaults = \
+                self.svc.workbook.pinchar.calculate_defaults(
+                    characteristic,
+                    values
+                )
+            
+            row = pin["row"]
+            
+            #
+            # write results
+            #
+            if "i2" in defaults:
+                self.svc.update_pin_i2(
+                    row,
+                    defaults["i2"]
+                )
+            
+            if "i3" in defaults:
+                self.svc.update_pin_i3(
+                    row,
+                    defaults["i3"]
+                )
+                
+            if "t1" in defaults:
+                self.svc.update_pin_t1(
+                    row,
+                    defaults["t1"]
+                )
+            
+            if "t2" in defaults:
+                self.svc.update_pin_t2(
+                    row,
+                    defaults["t2"]
+                )
+                
+            count += 1
+            
+        print(
+            f"Pins processed: {count}"
+        )
+        
+        self.svc.save()
+        
+        messagebox.showinfo(
+            "Pinchar",
+            f"{count} pins recalculated and saved"
+        )
+    
+    def validate_all_pins(self):
+        
+        results = self.svc.validate_all_pins()
+        
+        total = len(results)
+        
+        errors = 0
+        
+        for item in results:
+            if item["errors"]:
+                errors += 1
+        
+        passed = total - errors
+        messagebox.showinfo(
+            "Validation Results",
+            f"Total Pins: {total}\n"
+            f"PASS: {passed}\n"
+            f"FAIL: {errors}"
+        )
+        
+    def export_validation_report(self):
+        filename = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[
+                ("CSV Files", "*.csv")
+            ]
+        )
+        
+        if not filename:
+            return
+        
+        results = self.svc.validate_all_pins()
+        
+        with open(
+            filename,
+            "w",
+            newline="",
+            encoding="utf-8"
+        ) as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                "Slot",
+                "Pin",
+                "Description",
+                "Status",
+                "Errors"
+            ])
+            
+            for item in results:
+                pin = item["pin"]
+                errors = item["errors"]
+                writer.writerrom([
+                    pin.get("slot"),
+                    pin.get("Pin"),
+                    pin.get(
+                        "description",
+                        ""
+                    ),
+                    (
+                        "PASS"
+                        if not errors
+                        else "FAIL"
+                    ),
+                    " | ".join(errors)
+                ])
+    
+    def fill_all_pins(self):
+        from tkinter import messagebox
+        pins = self.svc.get_all_pins()
+        count = 0
+        for pin in pins:
+            function_name = str(
+                pin.get(
+                    "function",
+                    ""
+                )
+            ).strip()
+            
+            if not function_name:
+                continue
+            
+            info = self.svc.find_cl_info(
+                function_name
+            )
+            
+            if not info:
+                continue
+            
+            row = pin["row"]
+            
+            #
+            # CL Info
+            #
+            
+            self.svc.update_pin_direction(
+                row,
+                info.get(
+                    "direction",
+                    ""
+                )
+            )
+            
+            self.svc.update_pin_voltage(
+                row,
+                info.get(
+                    "voltage_type",
+                    ""
+                )
+            )
+            
+            self.svc.update_pin_utilization(
+                row,
+                info.get(
+                    "utilization",
+                    ""
+                )
+            )
+            
+            count += 1
+        self.svc.save()
+        messagebox.showinfo(
+            "Fill All Pins",
+            f"{count} pins updated."
+        )
         
 if __name__ == '__main__':
     root = tk.Tk()
